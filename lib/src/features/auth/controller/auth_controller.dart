@@ -32,6 +32,7 @@ class AuthController extends ChangeNotifier{
   String? confirmPasswordError;
 
   bool loading = false;
+  bool googleLoading = false;
   bool rememberMeCheckValue = false;
   bool privacyPolicyCheckValue = false;
   bool eligibleForSignup = false;
@@ -137,7 +138,7 @@ class AuthController extends ChangeNotifier{
         password: password.text,
       );
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-        'email': email,
+        'email': email.text,
       });
       showToast('Successfully signed up');
       emailAddress = email.text;
@@ -152,7 +153,7 @@ class AuthController extends ChangeNotifier{
         debugPrint('FirebaseAuthException: ${e.code}: ${e.message}');
       }
     } catch (error) {
-      showToast(error.toString());
+      showToast('Something went wrong!');
       debugPrint(error.toString());
     }
     loading = false;
@@ -203,10 +204,36 @@ class AuthController extends ChangeNotifier{
         debugPrint('FirebaseAuthException: ${e.code}: ${e.message}');
       }
     } catch (error) {
-      showToast(error.toString());
+      showToast('Something went wrong!');
       debugPrint(error.toString());
     }
     loading = false;
+    notifyListeners();
+  }
+
+  Future<void> signInWithGoogle() async {
+    googleLoading = true;
+    notifyListeners();
+    try {
+      final GoogleSignInAccount? googleSignInAccount = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication googleSignInAuthentication = await googleSignInAccount!.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleSignInAuthentication.accessToken,
+        idToken: googleSignInAuthentication.idToken,
+      );
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      if(rememberMeCheckValue==true){
+        await setData(LocalStorageKey.emailKey, userCredential.user!.email!);
+      }
+      showToast('Successfully logged in');
+      emailAddress = userCredential.user!.email!;
+      clearAll();
+      pushAndRemoveUntil(AppRouter.home);
+    } catch (error) {
+      showToast('Something went wrong!');
+      debugPrint(error.toString());
+    }
+    googleLoading = false;
     notifyListeners();
   }
 
@@ -229,14 +256,16 @@ class AuthController extends ChangeNotifier{
     if(userExist==false){
       loading =false;
       notifyListeners();
-      showToast('User not found with this email');
+      showErrorDialog('No user found', 'Please type a valid email address which is registered in Showa system');
       return;
     }
     try {
       _auth.setLanguageCode('en');
       await _auth.sendPasswordResetEmail(email: signInEmail.text);
+      showSuccessDialog('Password reset link sent', 'Successful password reset '
+          'link sent to email: “${signInEmail.text}” Please follow the email password reset instruction');
     } catch (error) {
-      showToast("Error sending password reset email: $error");
+      showErrorDialog('Error', 'Something went wrong try again later');
       debugPrint("Error sending password reset email: $error");
     }
     loading = false;
@@ -252,6 +281,7 @@ class AuthController extends ChangeNotifier{
 
       return users.docs.isNotEmpty;
     } catch (error) {
+      showToast('Something went wrong!');
       debugPrint("Error checking if user exists: $error");
       return false;
     }

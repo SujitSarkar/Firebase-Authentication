@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import '../../../../core/router/page_navigator.dart';
+import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/text_field_widget.dart';
 import 'package:flutter/material.dart';
@@ -123,13 +124,15 @@ class SignupScreen extends StatelessWidget {
                     )
                   ],
                 ),
-                SizedBox(height: 24.h),
+                SizedBox(height: 22.h),
                 PrimaryButton(
                   onTap: () => authController.agreeAndContinueButtonOnTap(),
                   backgroundColor: !authController.eligibleForSignup
                       ? const Color(0xffD7E0E7)
                       : null,
-                  child: "Agree and continue"
+                  child: authController.loading
+                      ? const LoadingWidget()
+                      : "Agree and continue"
                       .text
                       .size(16.sp)
                       .color(AppColor.whiteColor)

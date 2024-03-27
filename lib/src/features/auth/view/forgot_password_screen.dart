@@ -36,7 +36,10 @@ class ForgotPasswordScreen extends StatelessWidget {
               ),
               Positioned(
                 child: IconButton(
-                  onPressed: () => popScreen(),
+                  onPressed: () {
+                    authController.signInEmail.clear();
+                    popScreen();
+                    },
                   icon: const Icon(
                     Icons.arrow_back_ios_new,
                     color: AppColor.whiteColor,

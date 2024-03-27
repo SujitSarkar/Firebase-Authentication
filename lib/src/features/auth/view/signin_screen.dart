@@ -122,7 +122,8 @@ class SignInScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          SizedBox(height: 50.h),
+
+                          SizedBox(height: 32.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -146,7 +147,22 @@ class SignInScreen extends StatelessWidget {
                                     .make(),
                               )
                             ],
-                          )
+                          ),
+
+                          SizedBox(height: 24.h),
+
+                          InkWell(
+                            onTap: ()=> authController.signInWithGoogle(),
+                            child: CircleAvatar(
+                              radius: 24.r,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: authController.googleLoading
+                                    ? const LoadingWidget(color: AppColor.primaryColor)
+                                    : Image.asset('assets/images/google_logo.png'),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
