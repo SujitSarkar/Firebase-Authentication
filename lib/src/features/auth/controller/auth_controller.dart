@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -131,10 +132,13 @@ class AuthController extends ChangeNotifier{
     loading = true;
     notifyListeners();
     try {
-      await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.text,
         password: password.text,
       );
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'email': email,
+      });
       showToast('Successfully signed up');
       emailAddress = email.text;
       clearAll();
@@ -221,13 +225,13 @@ class AuthController extends ChangeNotifier{
     }
     loading =true;
     notifyListeners();
-    // bool userExist = await doesUserExist(signInEmail.text);
-    // if(userExist==false){
-    //   loading =false;
-    //   notifyListeners();
-    //   showToast('User not found with this email');
-    //   return;
-    // }
+    bool userExist = await doesUserExistByEmail(signInEmail.text);
+    if(userExist==false){
+      loading =false;
+      notifyListeners();
+      showToast('User not found with this email');
+      return;
+    }
     try {
       _auth.setLanguageCode('en');
       await _auth.sendPasswordResetEmail(email: signInEmail.text);
@@ -237,6 +241,20 @@ class AuthController extends ChangeNotifier{
     }
     loading = false;
     notifyListeners();
+  }
+
+  Future<bool> doesUserExistByEmail(String email) async {
+    try {
+      final QuerySnapshot users = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+
+      return users.docs.isNotEmpty;
+    } catch (error) {
+      debugPrint("Error checking if user exists: $error");
+      return false;
+    }
   }
 
   Future<void> signOut() async {
